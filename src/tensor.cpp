@@ -1,8 +1,8 @@
-#include <matrix.hpp>
+#include <tensor.hpp>
 
 namespace cnn_practice {
-    #define MATRIX_CNSRT(x) template <typename T> __Tensor<T>::x    
-    #define MATRIX_BASE_RET(x,y) template<typename T> x __Tensor<T>::y
+    #define TENSOR_CNSRT(x) template <typename T> __Tensor<T>::x    
+    #define TENSOR_BASE_RET(x,y) template<typename T> x __Tensor<T>::y
 /*
     MATRIX_CNSRT(__Tensor(int dimensionality)){
 
