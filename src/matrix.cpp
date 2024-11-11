@@ -1,14 +1,14 @@
 #include <matrix.hpp>
 
 namespace cnn_practice {
-    #define MATRIX_CNSRT(x) template <typename T> __Matrix<T>::x    
-    #define MATRIX_BASE_RET(x,y) template<typename T> x __Matrix<T>::y
-    
-    MATRIX_CNSRT(__Matrix(int dimensionality)){
+    #define MATRIX_CNSRT(x) template <typename T> __Tensor<T>::x    
+    #define MATRIX_BASE_RET(x,y) template<typename T> x __Tensor<T>::y
+/*
+    MATRIX_CNSRT(__Tensor(int dimensionality)){
 
     }
 
-    MATRIX_CNSRT(~__Matrix()){
+    MATRIX_CNSRT(~__Tensor()){
 
     }
 
@@ -16,18 +16,18 @@ namespace cnn_practice {
 
     }
 
-    #define INTERIM_MATRIX_CNSRT(x) template <typename T> __InterimMatrix<T>::x
-    #define INTERIM_MATRIX_BASE_RET(x,y) template <typename T> x __InterimMatrix<T>::y
+    #define INTERIM_MATRIX_CNSRT(x) template <typename T> __InterimTensor<T>::x
+    #define INTERIM_MATRIX_BASE_RET(x,y) template <typename T> x __InterimTensor<T>::y
 
-    INTERIM_MATRIX_CNSRT(__InterimMatrix(__Matrix<T>& rvalue)){
-
-    }
-
-    INTERIM_MATRIX_CNSRT(~__InterimMatrix()){
+    INTERIM_MATRIX_CNSRT(__InterimTensor(__Tensor<T>& rvalue)){
 
     }
 
-    INTERIM_MATRIX_BASE_RET(__InterimMatrix<T>, operator[](int index)){
+    INTERIM_MATRIX_CNSRT(~__InterimTensor()){
+
+    }
+
+    INTERIM_MATRIX_BASE_RET(__InterimTensor<T>, operator[](int index)){
 
     }
 
@@ -35,7 +35,8 @@ namespace cnn_practice {
 
     }
 
-    INTERIM_MATRIX_BASE_RET(Matrix<T>, operator[](int index)){
+    INTERIM_MATRIX_BASE_RET(Tensor<T>, operator[](int index)){
 
     }
+*/
 };
