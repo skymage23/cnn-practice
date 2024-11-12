@@ -76,9 +76,11 @@ namespace cnn_practice {
         };
 
         protected:
-        int* shape;
+        int const* shape;
         int rank;
-        void* data;
+
+        //row-major order:
+        T* data;
 
         //Hacky stuff to make operator[] work properly:
         private:
