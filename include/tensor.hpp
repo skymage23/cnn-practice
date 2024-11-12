@@ -1,5 +1,7 @@
-#include <cstdarg>
-#include <vector>
+#include <mutex>
+#include <thread>
+#include <unordered_map>
+
 /*
 * TO-DO:
 * 1.) get and value and slice fetch working.
@@ -35,15 +37,57 @@ namespace cnn_practice {
     //we can allocate the precise amount of memory we need
     //at construction.
     template <typename T> class __Tensor {
+        private:
+/*
+    If we ever need to be aggressive about cleaning up index
+    caches, we can update the __IndexCache class to capture
+    a timestamp whenever a read/write operation is initianted
+    on the tensor.  Then, elsewhere we periodically check
+    this timestamp, subtract it from a current timestamp,
+    and compare the value to some predefined record age
+    parameter set either at compile time or passed in
+    from somewhere. If the age of the index is equal to
+    or older than this value, the cache object is deleted.
+
+    How do I prevent one thread from writing to the index of another thread erroneously.
+    Other threads should only have authority to destroy index caches that have not
+    been accessed by their associated threads recently.
     
+    Answer: Since the threads do not have direct access to the cache map, there is very little
+            risk of them accessing caches they do not own, and if they do, that is a situation
+            that cannot be reasonably accounted for as it implies a programming error or unknown
+            out-of-process access.
+*/
+        class __IndexCache {
+            private:
+            int* index_cache; //Should always be of size rank - 1;
+            int  rank;
+            int  curr_index;
+
+            public:
+            __IndexCache(int rank);
+            ~__IndexCache();
+            bool is_cache_full(); //Set each element in the cache to some bogus value
+            void reset_cache();
+            bool add(int index);
+            int get_cache_length();
+            int operator[](int index);
+        };
+
         protected:
         int* shape;
         int rank;
-        void* data;  //This is because we can 
+        void* data;
+
+        //Hacky stuff to make operator[] work properly:
+        private:
+        std::unordered_map<std::thread::id, __IndexCache&> index_caches;
+        std::mutex index_cache_mutex;
 
         //Constructors:
         public:
         __Tensor(int rank, int* shape);
+        __Tensor(__Tensor<T>&& rvalue);
     
         //Destructors:
         public:
@@ -54,55 +98,7 @@ namespace cnn_practice {
            int get_shape(int dimension);
            T operator[](int index);
            const __Tensor<T>& operator[](int index) const;
+           void operator=(T&& rvalue);
+           void operator=(T rvalue);
     };
-
-/*
-    template <typename T,
-        typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr
-    > class Tensor : __Tensor<T> {
-        //Constructors:        
-        public:
-        Tensor(int* dimension_sizes, int num_dimensions) : __Tensor<T> (dimension_sizes, num_dimensions);
-        Tensor(__Tensor<T> &lvalue);
-    
-        public:
-        ~Tensor();
-
-        public:
-        __InterimTensor<T> operator[](int index);
-    };
-
-
-    //The next two classes are hacks to allow us to iterate
-    //over Tensor objects like C arrays.
-    template <typename T> class __FinalTensor : __InterimTensor<T> {
-        private:
-        int* index_stores;
-
-        public:
-        __FinalTensor(__Tensor<T>&& rvalue) : __InterimTensor<T>(std::move(rvalue));
-        
-        T operator[](int index);
-    };
-
-    template <typename T> class __InterimTensor : __Tensor<T>{
-        //Hello.
-        private:
-        int** dim_indices;  //Allocated when created, size = dimensionality of source Tensor.
-
-        //MoveConstructors:
-        public:
-        __InterimTensor(__Tensor<T>&& rvalue);
-
-        //Destructors:
-        ~__InterimTensor();
-
-        //API
-  
-        //Cannot have multiple operator[] overloads with different return types.
-        __FinalTensor<T> operator[](int index);
-        //Tensor<T> operator[](int index);  //When you are trying to isolate a slice.
-        //S__InterimTensor<T> operator[](int index);
-    };
-*/
 };
