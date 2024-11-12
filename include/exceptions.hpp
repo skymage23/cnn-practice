@@ -9,6 +9,8 @@ namespace cnn_practice {
             void** stacktrace;
 
             public:
+            BaseException() = delete;
+            //BaseException(std::string message);
             //BaseException(std::string message);
             BaseException(std::string&& message);
             ~BaseException();
@@ -16,10 +18,23 @@ namespace cnn_practice {
             void print_to_stderr();
         };
 
+        class ArgumentException : BaseException {
+            public:
+            ArgumentException() = delete;
+            ArgumentException(std::string message) : 
+               BaseException(std::move(message)){}
+        };
+
         class OutOfBoundsException : BaseException {
             public:
-            OutOfBoundsException() : BaseException("Attempted out of bounds access"){};
+            OutOfBoundsException() : BaseException("Attempted out of bounds access"){}
 
         };
+
+        class OutOfMemoryException : BaseException {
+            public:
+            OutOfMemoryException() : BaseException("Out of available memory"){}
+        };
+
     };
 };

@@ -1,4 +1,3 @@
-#include <mutex>
 #include <thread>
 #include <unordered_map>
 
@@ -83,17 +82,21 @@ namespace cnn_practice {
 
         //Hacky stuff to make operator[] work properly:
         private:
-        std::unordered_map<std::thread::id, __IndexCache&> index_caches;
-        std::mutex index_cache_mutex;
+        bool is_being_moved; //Keep the memory from being freed in the destructor.
+        std::unordered_map<std::thread::id, __IndexCache&&> index_caches;
 
         //Constructors:
         public:
-        __Tensor(int rank, int* shape);
+        __Tensor(int rank, const int const* shape);
         __Tensor(__Tensor<T>&& rvalue);
     
         //Destructors:
         public:
         ~__Tensor();
+
+        //Internal API:
+        protected:
+        __IndexCache& get_cache();        
 
         //API:
         public:
@@ -102,5 +105,16 @@ namespace cnn_practice {
            const __Tensor<T>& operator[](int index) const;
            void operator=(T&& rvalue);
            void operator=(T rvalue);
+    };
+
+    template <typename T,
+        //Should ultimately generate an undefined type error if the developer
+        //tries to use a non-numeric type for T and then use the resulting Tensor
+        //type. Basically, it causes the type generation to fail.
+        typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr
+    > class Tensor : Tensor<T>{
+        public:
+        Tensor(int rank, const int const* shape): __Tensor<T>(rank, shape);
+        Tensor(Tensor<T>&& input) : __Tensor<T>(std::dynamic_cast<__Tensor<T>>(input)){}
     };
 };
