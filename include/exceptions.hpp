@@ -9,7 +9,7 @@ namespace cnn_practice {
             void** stacktrace;
 
             public:
-            BaseException(std::string message);
+            //BaseException(std::string message);
             BaseException(std::string&& message);
             ~BaseException();
             char* to_string();
@@ -17,6 +17,8 @@ namespace cnn_practice {
         };
 
         class OutOfBoundsException : BaseException {
+            public:
+            OutOfBoundsException() : BaseException("Attempted out of bounds access"){};
 
         };
     };
