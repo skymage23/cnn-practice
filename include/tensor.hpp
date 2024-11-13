@@ -1,6 +1,11 @@
 #include <thread>
 #include <unordered_map>
 
+//Project includes:
+#include <exceptions.hpp>
+
+#ifndef CNN_PRACTICE_TENSOR
+#define CNN_PRACTICE_TENSOR
 /*
 * TO-DO:
 * 1.) get and value and slice fetch working.
@@ -61,9 +66,10 @@ namespace cnn_practice {
 */
         class __IndexCache {
             private:
-            int* index_cache; //Should always be of size rank - 1;
             int  rank;
             int  curr_index;
+            int* index_cache; //Should always be of size rank - 1;
+            
 
             public:
             __IndexCache(int rank);
@@ -80,21 +86,59 @@ namespace cnn_practice {
         int rank;
 
         //row-major order:
-        T* data;
+        char* data;
 
         //Hacky stuff to make operator[] work properly:
         private:
         bool is_being_moved; //Keep the memory from being freed in the destructor.
-        std::unordered_map<std::thread::id, __IndexCache&&> index_caches;
+        std::unordered_map<std::thread::id, __IndexCache*> index_caches;
 
         //Constructors:
         public:
-        __Tensor(int rank, const int const* shape);
-        __Tensor(__Tensor<T>&& rvalue);
-    
+        __Tensor(int rank, const int* const shape){
+            int temp = 1;
+            void *ptr_temp = nullptr;
+        
+            if (rank == 0){
+                throw exceptions::ArgumentException("rank cannot be 0");
+            }
+        
+            if (shape == nullptr) {
+                throw exceptions::ArgumentException("shape cannot be NULL");
+            }
+            this -> rank = rank;
+            this -> shape = shape; //Do I need a cast?
+        
+            //Calculate the total amount of memory we need to allocate
+            //so we that we only need to call malloc once.
+            for (int i = 0; i < rank; i++){
+                temp *= shape[i];
+            }
+        
+            ptr_temp = new char [sizeof(T)*temp];
+            
+            //What happens if we can't allocate the space?
+            this -> data = ptr_temp;
+        }
+
+        __Tensor(__Tensor<T>&& input){
+            this -> rank = input.rank;
+            this -> shape = input.shape;
+            this -> data = input.data;
+        }
+
         //Destructors:
         public:
-        ~__Tensor();
+        ~__Tensor(){
+            //Clear cache.
+            std::unordered_map<std::thread::id, __IndexCache> temp_map =  this -> index_caches;
+            for (auto i = this -> temp_map.begin(); i != temp_map.end(); i++){
+                __IndexCache *temp = i -> first();
+                delete temp;
+                temp_map[]
+            }
+            delete this -> data;
+        }
 
         //Internal API:
         protected:
@@ -114,9 +158,10 @@ namespace cnn_practice {
         //tries to use a non-numeric type for T and then use the resulting Tensor
         //type. Basically, it causes the type generation to fail.
         typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr
-    > class Tensor : Tensor<T>{
+    > class Tensor : __Tensor<T> {
         public:
-        Tensor(int rank, const int const* shape): __Tensor<T>(rank, shape);
-        Tensor(Tensor<T>&& input) : __Tensor<T>(std::dynamic_cast<__Tensor<T>>(input)){}
+        Tensor(int rank, const int* const shape);
+       // Tensor(Tensor<T>&& input) : __Tensor<T>(std::dynamic_cast<__Tensor<T>>(input)){}
     };
 };
+#endif

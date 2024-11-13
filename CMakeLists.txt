@@ -19,14 +19,14 @@ target_include_directories(cnn-practice
 )
 
 
-#add_library(exceptions STATIC ${PROJECT_SOURCE_DIR}/exceptions.cpp)
-#target_include_directories(exceptions PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+add_library(exceptions STATIC ${PROJECT_SOURCE_DIR}/exceptions.cpp)
+target_include_directories(exceptions PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 
 add_library(tensor STATIC ${PROJECT_SOURCE_DIR}/tensor.cpp)
 target_include_directories(tensor PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
-#target_link_libraries(tensor
-#    exceptions
-#)
+target_link_libraries(tensor
+    exceptions
+)
 
 
 target_link_libraries(cnn-practice
