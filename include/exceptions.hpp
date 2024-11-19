@@ -3,6 +3,7 @@
 
 #ifndef CNN_PRACTICE_EXCEPTIONS
 #define CNN_PRACTICE_EXCEPTIONS
+namespace cnn_practice {
 namespace exceptions {
     class BaseException {
         private:
@@ -37,5 +38,14 @@ namespace exceptions {
         OutOfMemoryException() : BaseException("Out of available memory"){}
     };
 
+    class TensorFetchException : BaseException {
+        public:
+        TensorFetchException() : BaseException(
+            "An error occurred when fetching an element out of a tensor \
+            This is a programming error and not your fault."
+        ){}
+    };
+
+};
 };
 #endif

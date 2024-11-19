@@ -12,7 +12,8 @@
 			"vector": "cpp",
 			"string_view": "cpp",
 			"span": "cpp",
-			"text_encoding": "cpp"
-		}
+			"text_encoding": "cpp",
+			"type_traits": "cpp"
+		},
 	}
 }

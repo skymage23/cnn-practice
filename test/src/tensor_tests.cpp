@@ -1,58 +1,74 @@
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <vector>
+
 #include <gtest/gtest.h>
 
-#include <tensor.hpp>
+
 #include <exceptions.hpp>
+#include <tensor.hpp>
+
 
 TEST(TensorTests, TensorCreationNoSegfault){
   //Ensure the constructor doesn't generate a segfault.
-  ASSERT_EXIT(
-      (cnn_practice::Tensor<int> tensor(10, [1,1,2,3,4,5,6,7,8,9]), exit(0)),
-      ::testing::ExitedWithCode(0),
-      ""
+  ASSERT_NO_FATAL_FAILURE(
+      cnn_practice::Tensor<int>tensor (std::vector<int>{1,1,2,3,4,5,6,7,8,9})
   );
 }
 
 TEST(TensorTests, DisallowNoRank){
-    ASSERT_THROW(cnn_practice::Tensor<int> tensor(0,[0]), cnn_practice::exceptions::ArgumentException);
+    ASSERT_THROW(
+        cnn_practice::Tensor<int>(std::vector<int>()),
+        cnn_practice::exceptions::ArgumentException
+    );
 }
 
 TEST(TensorTests, DisallowShapesOfZeroSizeInAnyDimension){
-    ASSERT_THROW(cnn_practice::Tensor<int> tensor(1,[0]), cnn_practice::exceptions::ArgumentException);
+    ASSERT_THROW(
+        cnn_practice::Tensor<int> tensor(std::vector<int>{0}),
+        cnn_practice::exceptions::ArgumentException
+    );
 }
 
 TEST(TensorTests, ElementSet){
+    auto set_element = [&](){
+        cnn_practice::Tensor<int> tensor(std::vector<int>{1});
+        tensor[0] = 10;
+        std::cout << "Success";
+        exit(0);
+    }
+
     ASSERT_EXIT(
-        (
-            cnn_practice::Tensor<int> tensor(1,[1]),
-            tensor[0] = 10,
-            exit(0)
-        ),
-        ::testing::ExitWithCode(0),
+        set_element(),
+        ::testing::ExitedWithCode(0),
         ""
     );
 }
 
 TEST(TensorTests, ElementGet){
-  int test_int = 10
-  cnn_practice::Tensor<int> tensor(1, [1]);
+  int test_int = 10;
+  cnn_practice::Tensor<int> tensor(std::vector<int>{1});
   tensor[0] = test_int;
   ASSERT_EQ(tensor[0], test_int);
 }
 
 TEST(TensorTests, MultiDimensionalOperatorBracketsElementSet){
+    auto set_element = [&]() {
+        cnn_practice::Tensor<int> tensor(std::vector<int>{1,1,1})
+        tensor[0][0][0] = 10;
+        std::cout << "Success"
+    };
     ASSERT_EXIT(
-        (
-            cn_practice::Tensor<int> tensor(3,[1,1,1]),
-            tensor[0][0][0] = 10
-        ),
-        ::testing::ExitWithCode(0),
+        set_element(),
+        ::testing::ExitedWithCode(0),
         ""
     );
 }
 
 TEST(TensorTests, MultiDimensionalOperatorBracketsElementGet){
     int test_int = 10;
-    cn_practice::Tensor<int> tensor(3,[1,1,1]);
+    cnn_practice::Tensor<int> tensor(std::vector<int>{1,1,1});
     tensor[0][0][0] = test_int;
     ASSERT_EQ(tensor[0][0][0], test_int);
 }
