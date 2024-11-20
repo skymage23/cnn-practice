@@ -53,7 +53,7 @@ namespace cnn_practice {
         class __IndexCachingTemporaryFetcher {
             private:
             int  cache_len;
-            int  curr_index;
+            int  curr_shape_index;
             std::shared_ptr<std::vector<int>> index_cache; 
             __Tensor<A>& tensor_ref;
 
@@ -63,6 +63,7 @@ namespace cnn_practice {
                 this -> index_cache = std::unique_ptr<std::vector<int>>(
                     new std::vector<int>()
                 );
+                this -> curr_shape_index = 0;
             }
             
 
@@ -72,6 +73,12 @@ namespace cnn_practice {
             //bool add(int index);
             //int get_cache_length();
             __IndexCachingTemporaryFetcher& operator[](int index){
+                if (index < 1){
+                    throw new exceptions::ArgumentException("index cannot be 0.")
+                }
+
+                if (index > 0)
+
                 if (this -> is_cache_full()){
                     throw new exceptions::TensorFetchException();
                 }
@@ -79,6 +86,9 @@ namespace cnn_practice {
                 return this;
             }
             A operator[](int index){
+                if (index < 1){
+                    throw new exceptions::ArgumentException("index cannot be 0.")
+                }
                 if (this -> num_free_elements() != 1){
                     throw new exceptions::TensorFetchException();
                 }
@@ -86,33 +96,39 @@ namespace cnn_practice {
                 return tensor_ref.get_element(this -> index_cache);
             }
         }
+        friend __IndexCachingTemporaryFetcher;
 
+        private:
+        unsigned int data_byte_limit;
         protected:
         std::unique_ptr<std::vector<unsigned int>> shape;
         int rank;
-
+        size_t datatype_size;
         //row-major order:
-        std::unique_ptr<std::vector<unsigned char>> data;
+        std::unique_ptr<std::vector<unsigned char>> data; //Greate. Little endian or big endian.
 
-        //Hacky stuff to make operator[] work properly:
-        private:
-        bool is_being_moved; //Keep the memory from being freed in the destructor.
-        std::unordered_map<std::thread::id, IndexCache> index_caches;
 
         //Constructors:
         public:
-        __Tensor(std::vector<unsigned int> shape){
-            int dim_err_str_size = 56; 
+        __Tensor() = delete;
+        __Tensor(__Tensor<T>) = delete;
+
+        __Tensor(std::vector<int>& shape) : __Tensor(std::move(shape)){}
+        __Tensor(std::unique_ptr<std::vector<unsigned int>> shape) : 
+            shape(std::move(shape)),
+            datatype_size(sizeof(T))
+        
+        {
+            static int dim_err_str_size = 56;
+            unsigned int temp = 1;
             this -> rank = shape.size()
             if (this -> rank == 0){
                 throw exceptions::ArgumentException("rank cannot be 0");
             }
-
-            this -> shape = shape;
-            
+ 
             //Check for sizes of 0
             for (int i : shape) {
-                if (shape[i] < 1){
+                if (i < 1){
                     dim_err_str_size += get_num_chars_in_int(i);
                     char* buff = (char*)malloc(sizeof(char) * dim_err_str_size);
                     vsnprintf(
@@ -123,21 +139,23 @@ namespace cnn_practice {
                     );
                     throw exceptions::ArgumentException(std::string(buff))
                 }
+                temp *= i;
             }
-        
+            this -> data_byte_limit = temp * this -> datatype_size;
+            this -> data = std::vector<char>();
         }
 
         __Tensor(__Tensor<T>&& input){
             this -> rank = input.rank;
-            this -> shape = input.shape.swap();
-            this -> data = input.data.swap();
-            this -> index_caches = input.index_caches;
+            this -> shape = std::move(input.shape);
+            this -> data = std::move(input.data);
         }
 
         //Destructors:
 
         //Internal API:
         protected:
+        /*
         __IndexCache& get_cache(){
             std::thread::id t_id = std::this_thread::get_id();
             if (! (this -> index_caches).contains(t_id)){
@@ -146,33 +164,39 @@ namespace cnn_practice {
 
             return (this -> index_caches)[t_id];
         }
-
+        */
         //API:
         public:
-        int get_shape(int dimension){ return this -> shape; }
+        int get_rank(){ return this -> rank;}
+        std::vector<int> get_shape(){ return std::vector<int>((this -> shape).get()); }
         T get_element(std::shared_ptr<std::vector<int>> indicies) {
+            T retval;
+            int skip = 1;
 
-        }   
-
-        __Tensor<T> operator[](int index){
-            //Get index cache:
-            IndexCache cache = this -> get_cache(); 
-            //Is the cache full?:
-            if (cache.is_cache_full()){
-                //Programming error:
+            for(int i = 0; i < this -> rank; i++){
+                skip *= indices[i];
             }
 
-            return this;
-        }
+            retval = std::static_cast<T>(
+                ((this -> data).data() + skip)*
+            )
+            return retval; 
+        }   
 
-        T operator[](int index){
-            IndexCache cache =
-        }
+        __IndexCachingTemporaryFetcher<T> operator[](int index){
 
-        const __Tensor<T> operator[](int index) const;
-        void operator=(T&& rvalue);
-        void operator=(T rvalue);    
-    };
-    
+            if (index < 1){
+                throw new exceptions::ArgumentException("index cannot be 0.");
+            }
+
+            if (index > (this -> shape)[0]){
+                throw new exceptions::OutOfBoundsException();
+            }
+
+            __IndexCachingTemporaryFetcher<T> retval(this);
+            retval.add(index);
+            return retval;
+        }
+    };    
 };
 #endif

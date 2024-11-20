@@ -17,6 +17,14 @@ TEST(TensorTests, TensorCreationNoSegfault){
   );
 }
 
+TEST(TensorTests, TensorCreationTestPropertySet){
+   //Ensure the constructor doesn't generate a segfault.
+
+   cnn_practice::Tensor<int> tensor(std::vector<int>{1,1,2,3,4,5,6,7,8,9});
+
+   ASSERT_EQUAL(tensor.get_rank(),10);
+}
+
 TEST(TensorTests, DisallowNoRank){
     ASSERT_THROW(
         cnn_practice::Tensor<int>(std::vector<int>()),
