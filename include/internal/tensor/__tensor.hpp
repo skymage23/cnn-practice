@@ -48,6 +48,8 @@ namespace cnn_practice {
     //we can allocate the precise amount of memory we need
     //at construction.
     template <numeric T> class __Tensor {
+
+        //Private Classes:
         private:
         template<numeric A>
         class __IndexCachingTemporaryFetcher {
@@ -70,34 +72,46 @@ namespace cnn_practice {
             //bool is_cache_full(); //Set each element in the cache to some bogus value
             //int  num_free_elements();
             //void reset_cache();
-            //bool add(int index);
-            //int get_cache_length();
-            __IndexCachingTemporaryFetcher& operator[](int index){
-                if (index < 1){
-                    throw new exceptions::ArgumentException("index cannot be 0.")
+            void add(int index) {
+                try{
+                    (this -> index_cache) -> push_back(index);
+                } catch(std::bad_alloc except){
+                    //This would ruin the stack trace.
+                    //Needs fixing eventually.
+                    throw new exceptions::OutOfMemoryException();
                 }
 
-                if (index > 0)
-
-                if (this -> is_cache_full()){
-                    throw new exceptions::TensorFetchException();
-                }
-                this -> add(index);
-                return this;
             }
-            A operator[](int index){
+            //int get_cache_length();
+            __IndexCachingTemporaryFetcher operator[](int index){
                 if (index < 1){
-                    throw new exceptions::ArgumentException("index cannot be 0.")
+                    throw new exceptions::ArgumentException("index cannot be 0.");
                 }
-                if (this -> num_free_elements() != 1){
+
+                if (index > (this -> tensor_ref.shape[curr_shape_index])) {
+                     throw new exceptions::OutOfBoundsException();
+                }
+                /*if (this -> is_cache_full()){
                     throw new exceptions::TensorFetchException();
-                }
+                }*/
                 this -> add(index);
+                return *this;
+            }
+
+            //Freaking cool. This let's me define HOW my type is casted to another type.
+            //Making using operator[] to parse through a user-defined object a reality.
+            operator A(){
                 return tensor_ref.get_element(this -> index_cache);
             }
-        }
-        friend __IndexCachingTemporaryFetcher;
 
+            A& operator=(A val){
+                return tensor_ref.set_element(this -> index_cache, val);
+            }
+        };
+
+        friend class __IndexCachingTemporaryFetcher<T>;
+
+        
         private:
         unsigned int data_byte_limit;
         protected:
@@ -111,9 +125,9 @@ namespace cnn_practice {
         //Constructors:
         public:
         __Tensor() = delete;
-        __Tensor(__Tensor<T>) = delete;
-
-        __Tensor(std::vector<int>& shape) : __Tensor(std::move(shape)){}
+        __Tensor(std::vector<int>& shape) : __Tensor(
+                std::make_unique(shape))
+            ){}
         __Tensor(std::unique_ptr<std::vector<unsigned int>> shape) : 
             shape(std::move(shape)),
             datatype_size(sizeof(T))
@@ -121,7 +135,7 @@ namespace cnn_practice {
         {
             static int dim_err_str_size = 56;
             unsigned int temp = 1;
-            this -> rank = shape.size()
+            this -> rank = shape -> size();
             if (this -> rank == 0){
                 throw exceptions::ArgumentException("rank cannot be 0");
             }
@@ -196,6 +210,10 @@ namespace cnn_practice {
             __IndexCachingTemporaryFetcher<T> retval(this);
             retval.add(index);
             return retval;
+        }
+
+        T& set_element(std::shared_ptr<std::vector<int>> indices, T value){
+            //Add Logic to Set Element Here.
         }
     };    
 };
